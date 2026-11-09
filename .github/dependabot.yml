@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: terraform
+    directories:
+      - /envs/0-bootstrap
+      - /envs/1-org
+      - /envs/2-networking
+      - /envs/3-projects
+    schedule:
+      interval: weekly

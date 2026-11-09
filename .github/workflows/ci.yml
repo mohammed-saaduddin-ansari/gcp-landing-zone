@@ -1,0 +1,173 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: 1.16.6
+  TFLINT_VERSION: v0.64.0
+  TERRAFORM_DOCS_VERSION: v0.24.0
+  CHECKOV_VERSION: 3.4.3
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform-plugin-cache
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - run: terraform fmt -recursive -check -diff
+
+  discover:
+    name: discover Terraform roots
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.dirs.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: dirs
+        run: echo "dirs=$(scripts/tf-dirs.sh | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> "$GITHUB_OUTPUT"
+
+  validate-and-test:
+    name: validate + test (${{ matrix.dir }})
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJSON(needs.discover.outputs.dirs) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: Cache provider plugins
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: tf-plugins-${{ runner.os }}-${{ hashFiles('**/versions.tf', 'envs/**/.terraform.lock.hcl') }}
+      - run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - name: terraform init (no backend, no credentials)
+        run: terraform -chdir="${{ matrix.dir }}" init -backend=false
+      - name: terraform validate
+        run: terraform -chdir="${{ matrix.dir }}" validate
+      - name: terraform test (mocked providers)
+        if: hashFiles(format('{0}/tests/*.tftest.hcl', matrix.dir)) != ''
+        run: terraform -chdir="${{ matrix.dir }}" test
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ runner.os }}-${{ hashFiles('.tflint.hcl') }}
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+      - name: tflint --init
+        run: tflint --init --config "$GITHUB_WORKSPACE/.tflint.hcl"
+        env:
+          # Avoids GitHub API rate limits when downloading the google ruleset.
+          GITHUB_TOKEN: ${{ github.token }}
+      - run: tflint --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
+
+  checkov:
+    name: checkov
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install "checkov==${CHECKOV_VERSION}"
+      - name: checkov (skips are documented in .checkov.yaml)
+        run: checkov --config-file .checkov.yaml
+
+  docs:
+    name: terraform-docs up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install terraform-docs
+        run: |
+          curl -fsSLo /tmp/terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          tar -xzf /tmp/terraform-docs.tar.gz -C /tmp terraform-docs
+          sudo install /tmp/terraform-docs /usr/local/bin/terraform-docs
+      - run: scripts/docs.sh --check
+
+  # Real plans against a real organisation. Requires the bootstrap stage to have been applied and these
+  # repository variables to be set (none of them is secret):
+  #   GCP_WIF_PROVIDER          workload_identity_provider output of envs/0-bootstrap
+  #   GCP_SA_<STAGE>_PLAN       e.g. GCP_SA_ORG_PLAN = tf-org-plan@<seed>.iam.gserviceaccount.com
+  #   TF_STATE_BUCKET           state_bucket output of envs/0-bootstrap
+  #   TFVARS_<STAGE>            contents of the stage's terraform.tfvars
+  # Without GCP_WIF_PROVIDER (for example on a fork or a fresh clone) the job is skipped, not failed.
+  plan:
+    name: plan (${{ matrix.stage.dir }})
+    if: github.event_name == 'pull_request' && vars.GCP_WIF_PROVIDER != ''
+    needs: [fmt, validate-and-test, tflint, checkov]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # to request the GitHub OIDC token exchanged through workload identity federation
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        stage:
+          - { dir: 1-org, key: ORG, prefix: org }
+          - { dir: 2-networking, key: NETWORKING, prefix: networking }
+          - { dir: 3-projects, key: PROJECTS, prefix: projects }
+    defaults:
+      run:
+        working-directory: envs/${{ matrix.stage.dir }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - id: auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars[format('GCP_SA_{0}_PLAN', matrix.stage.key)] }}
+      - name: Write tfvars
+        env:
+          TFVARS: ${{ vars[format('TFVARS_{0}', matrix.stage.key)] }}
+        run: printf '%s\n' "$TFVARS" > ci.auto.tfvars
+      - run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - name: terraform init
+        run: terraform init -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" -backend-config="prefix=${{ matrix.stage.prefix }}"
+      - name: terraform plan (read-only identity, so no state lock)
+        run: terraform plan -lock=false -no-color -out=tfplan | tee plan.txt
+      - name: Plan summary
+        if: always()
+        run: |
+          {
+            echo "### Plan: ${{ matrix.stage.dir }}"
+            echo '```'
+            grep -E '^(Plan:|No changes)' plan.txt || echo "plan did not complete"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

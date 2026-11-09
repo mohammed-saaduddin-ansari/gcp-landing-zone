@@ -57,6 +57,12 @@ variable "projects" {
   }
 
   validation {
+    # Cloud Resource Manager rule for project display names.
+    condition     = alltrue([for p in values(var.projects) : p.name == null || can(regex("^[A-Za-z0-9 '\"!-]{4,30}$", p.name))])
+    error_message = "Project names must be 4-30 characters of letters, digits, spaces, hyphens, quotes or exclamation marks."
+  }
+
+  validation {
     condition     = alltrue([for p in values(var.projects) : can(regex("^folders/[0-9]+$", p.folder_id))])
     error_message = "folder_id must be a folder resource name such as folders/123456789012."
   }

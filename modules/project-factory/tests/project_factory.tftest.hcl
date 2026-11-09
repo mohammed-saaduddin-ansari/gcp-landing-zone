@@ -147,3 +147,19 @@ run "rejects_uppercase_labels" {
 
   expect_failures = [var.projects]
 }
+
+run "rejects_invalid_display_name" {
+  command = plan
+
+  variables {
+    projects = {
+      "prj-s-scratch-01" = {
+        name      = "Scratch (temporary)"
+        folder_id = "folders/555555555555"
+        labels    = { environment = "sandbox", owner = "me", cost_centre = "cc-1" }
+      }
+    }
+  }
+
+  expect_failures = [var.projects]
+}

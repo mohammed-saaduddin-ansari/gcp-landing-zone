@@ -1,6 +1,6 @@
 # vpc-service-controls
 
-An optional VPC Service Controls perimeter around sensitive projects, **dry-run by default**.
+An optional VPC Service Controls perimeter around sensitive projects, dry-run by default.
 
 VPC-SC stops data being copied out of a set of projects through Google APIs, even by a caller with valid IAM
 credentials, for example `gsutil cp` from a production bucket to a personal project. It is also one of the
@@ -15,7 +15,7 @@ So this module:
    live `status`.
 
 Review a few weeks of dry-run violation logs, add ingress and egress rules or access levels for the
-legitimate ones, then enforce. Resources are project **numbers**, not IDs; the variable validation enforces
+legitimate ones, then enforce. Resources are project numbers, not IDs; the variable validation enforces
 this.
 
 Not yet covered: ingress and egress policies as inputs and perimeter bridges. See the roadmap.

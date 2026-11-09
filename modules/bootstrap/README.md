@@ -2,12 +2,12 @@
 
 Creates what every other stage depends on:
 
-* a **seed project** (no default network, deletion-protected) that holds state and CI identities and
+* a seed project (no default network, deletion-protected) that holds state and CI identities and
   is used as the quota project for API calls;
-* a **Terraform state bucket** with versioning, uniform bucket-level access, public access prevention,
+* a Terraform state bucket with versioning, uniform bucket-level access, public access prevention,
   a bounded number of noncurrent versions for rollback and optional CMEK;
-* one **CI service account per stage**, each with only the organisation and billing roles its stage needs;
-* a **workload identity pool and GitHub OIDC provider**, so GitHub Actions gets short-lived credentials and no
+* one CI service account per stage, each with only the organisation and billing roles its stage needs;
+* a workload identity pool and GitHub OIDC provider, so GitHub Actions gets short-lived credentials and no
   service account key ever exists.
 
 ## How the GitHub trust works

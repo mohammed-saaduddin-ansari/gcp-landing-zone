@@ -2,10 +2,10 @@
 
 Organisation-level security plumbing that does not belong to any one project.
 
-* **Security Command Center notifications**: a Pub/Sub topic in the security project and an SCC v2
+* Security Command Center notifications: a Pub/Sub topic in the security project and an SCC v2
   notification config that streams active, unmuted HIGH and CRITICAL findings to it, ready for a paging or
   ticketing subscriber. The SCC notification service agent is granted publisher on the topic explicitly.
-* **Essential Contacts** at organisation level, so Google's security, billing, legal and suspension notices
+* Essential Contacts at organisation level, so Google's security, billing, legal and suspension notices
   reach group mailboxes rather than whoever created the organisation.
 
 ## Security Command Center notes

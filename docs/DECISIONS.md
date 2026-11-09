@@ -62,7 +62,7 @@ folder-level change. Business-unit differences need subfolders, which the module
 
 ## ADR-003: Keyless CI with workload identity federation and plan/apply identities
 
-**Context.** Terraform for a landing zone runs with some of the most powerful credentials in the
+**Context.** Terraform for a landing zone runs with some of the most privileged credentials in the
 organisation. Service account keys are long-lived bearer credentials that get copied into CI secrets,
 laptops and occasionally logs, and are hard to rotate.
 
@@ -182,7 +182,7 @@ investigated, kept for a defined period and still available after a project is d
 
 **Alternatives.**
 * *Per-project sinks.* Project owners could remove them, and new projects would need them added.
-* *BigQuery as the primary destination.* Powerful SQL, but needs a dataset schema strategy and partition
+* *BigQuery as the primary destination.* Full SQL, but needs a dataset schema strategy and partition
   management, and retention is managed as table expiry. Log Analytics on log buckets gives SQL when needed
   without a second copy.
 * *Pub/Sub to a SIEM.* Right when a SIEM exists; the sink module can be extended with a Pub/Sub destination.

@@ -3,11 +3,11 @@
 Turns a host project into one environment's Shared VPC.
 
 * Custom-mode VPC (no auto subnets), `GLOBAL` dynamic routing by default.
-* Subnets with **Private Google Access** on and **VPC flow logs** on at 50% sampling (both overridable per
+* Subnets with Private Google Access on and VPC flow logs on at 50% sampling (both overridable per
   subnet), plus optional secondary ranges for GKE.
-* One **Cloud Router and Cloud NAT** per region that has a subnet, with dynamic port allocation and error
+* One Cloud Router and Cloud NAT per region that has a subnet, with dynamic port allocation and error
   logging. VMs have no external IPs (see the org policy baseline), so NAT is the only way out to the internet.
-* A **Cloud DNS server policy** that logs queries and can accept inbound forwarding from on-premises.
+* A Cloud DNS server policy that logs queries and can accept inbound forwarding from on-premises.
 
 Firewall policy is deliberately not in this module: the baseline lives in hierarchical firewall policies
 (`modules/firewall-policy`), and application teams manage their own VPC rules.

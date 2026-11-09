@@ -17,18 +17,18 @@ up, so it is skipped on forks.
 
 ## Conventions
 
-* **Modules** live in `modules/<name>/` with `versions.tf`, `variables.tf`, `main.tf`, `outputs.tf`, a
+* Modules live in `modules/<name>/` with `versions.tf`, `variables.tf`, `main.tf`, `outputs.tf`, a
   `README.md` (hand-written intro and usage, generated inputs and outputs) and `tests/*.tftest.hcl`.
-* **Every variable and output has a description and a type.** TFLint enforces this.
-* **Validate at the boundary.** Reject bad input in variable `validation` blocks or `lifecycle`
+* Every variable and output has a description and a type. TFLint enforces this.
+* Validate at the boundary. Reject bad input in variable `validation` blocks or `lifecycle`
   preconditions with a message that says how to fix it, and add an `expect_failures` test for it.
-* **Tests use `mock_provider "google"`** and must run offline. When the provider validates a mocked computed
+* Tests use `mock_provider "google"` and must run offline. When the provider validates a mocked computed
   value (IAM members, for example), give the mock a realistic default.
-* **`for_each` keys must be known at plan time.** Use static labels in keys and put apply-time values in the
+* `for_each` keys must be known at plan time. Use static labels in keys and put apply-time values in the
   map values.
-* **Groups only** for human access; no `roles/owner` or `roles/editor`.
-* **New checkov skips** go in `.checkov.yaml` with a reason, and in the table in `docs/ARCHITECTURE.md`.
-* **Significant design changes** get an ADR in `docs/DECISIONS.md`.
+* Groups only for human access; no `roles/owner` or `roles/editor`.
+* New checkov skips go in `.checkov.yaml` with a reason, and in the table in `docs/ARCHITECTURE.md`.
+* Significant design changes get an ADR in `docs/DECISIONS.md`.
 * British spelling in prose; Google's spelling in API names and identifiers.
 
 ## Commit messages

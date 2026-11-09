@@ -18,7 +18,7 @@ Each later stage gets two CI identities:
 | `tf-<stage>-plan` | read-only at organisation level, `objectViewer` on state | any workflow in the repository (pull request plans, run with `-lock=false`) |
 | `tf-<stage>` | what the stage needs to change things, `objectAdmin` on state | only jobs running in the GitHub environment `<stage>` (`apply_environments = true`, the default) |
 
-Then record the outputs as GitHub Actions **variables** (not secrets; none of them is sensitive):
+Then record the outputs as GitHub Actions variables (not secrets; none of them is sensitive):
 `GCP_WIF_PROVIDER` from `workload_identity_provider`, `TF_STATE_BUCKET` from `state_bucket`, and
 `GCP_SA_<STAGE>_PLAN` from `ci_service_accounts`. Create GitHub environments named `org`, `networking` and
 `projects` with required reviewers and a `main`-only deployment rule.

@@ -6,14 +6,14 @@ project (`envs/3-projects/projects/`), so a new project is a pull request that a
 For each project:
 
 * no default network, deletion protection (`PREVENT`) unless overridden;
-* default labels merged with project labels, and a precondition that the **required labels**
+* default labels merged with project labels, and a precondition that the required labels
   (`environment`, `owner`, `cost_centre` by default) are present, so cost reports can be grouped from day one;
 * APIs enabled (`disable_on_destroy = false`, so removing an API from the list never breaks a running
   workload);
 * IAM for groups only, as in `modules/iam`;
-* optionally a **monthly budget** with alerts at 50/90/100% of actual spend and 100% of forecast spend, sent
+* optionally a monthly budget with alerts at 50/90/100% of actual spend and 100% of forecast spend, sent
   to billing administrators and optionally to Pub/Sub or Cloud Monitoring channels;
-* optionally **Shared VPC attachment** with `roles/compute.networkUser` on named subnets for the given
+* optionally Shared VPC attachment with `roles/compute.networkUser` on named subnets for the given
   groups, the Google APIs service agent and, if GKE is enabled, the GKE service agent (which also gets
   `roles/container.hostServiceAgentUser` on the host project).
 

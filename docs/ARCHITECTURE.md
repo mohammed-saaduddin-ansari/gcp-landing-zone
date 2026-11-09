@@ -88,19 +88,19 @@ Each environment (`prod`, `nonprod`) has its own host project and Shared VPC, in
 Service projects attach to the host project of their environment and are granted `compute.networkUser` on
 the specific subnets they need, never on the whole host project.
 
-Egress to the internet goes through **Cloud NAT** in each region that has a subnet (VMs cannot have external
-IPs). Google API traffic goes to a **Private Service Connect endpoint** inside the VPC, and private zones for
+Egress to the internet goes through Cloud NAT in each region that has a subnet (VMs cannot have external
+IPs). Google API traffic goes to a Private Service Connect endpoint inside the VPC, and private zones for
 `googleapis.com`, `gcr.io` and `pkg.dev` resolve the default hostnames to that endpoint. Private Google Access
 is also on for every subnet, so a Google API hostname that is not covered by the private zones still works
 from VMs without external IPs.
 
 Ingress and east-west policy is layered:
 
-1. **Organisation firewall policy** (evaluated first): allow IAP TCP forwarding (`35.235.240.0/20`) and Google
+1. Organisation firewall policy (evaluated first): allow IAP TCP forwarding (`35.235.240.0/20`) and Google
    health checks (`35.191.0.0/16`, `130.211.0.0/22`); deny SSH and RDP from anywhere else. Everything else
    falls through.
-2. **Folder policies** (none yet): the place for environment-wide rules.
-3. **VPC firewall rules** in the host project: owned by the network team, requested by application teams.
+2. Folder policies (none yet): the place for environment-wide rules.
+3. VPC firewall rules in the host project: owned by the network team, requested by application teams.
 
 ### Address plan
 
@@ -129,15 +129,15 @@ flowchart LR
     ab & nb --- lp["logging project (common/)"]
 ```
 
-* Sinks are **organisation-level aggregated sinks** with `include_children = true`. They copy logs; each
+* Sinks are organisation-level aggregated sinks with `include_children = true`. They copy logs; each
   project keeps its own `_Required` and `_Default` buckets as usual.
 * Each sink's writer identity gets `roles/logging.bucketWriter` on the logging project, conditioned to its own
   bucket.
 * Audit logs covered: Admin Activity, System Event, Policy Denied, Data Access (where enabled) and Access
   Transparency.
-* **Data Access audit logs** are off by default and can be switched on per service at organisation level
+* Data Access audit logs are off by default and can be switched on per service at organisation level
   (`data_access_audit_services`). They are the largest cost variable in the design.
-* Log buckets can be **locked** and **upgraded to Log Analytics**. Both are irreversible and default to off.
+* Log buckets can be locked and upgraded to Log Analytics. Both are irreversible and default to off.
 
 ## Security controls
 

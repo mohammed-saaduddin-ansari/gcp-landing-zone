@@ -2,16 +2,16 @@
 
 Centralises logs from the whole organisation into one logging project.
 
-* **Organisation-level aggregated sinks** (`include_children = true`) route matching logs from every folder
-  and project into **Cloud Logging buckets** in the logging project. Projects cannot opt out, and the
+* Organisation-level aggregated sinks (`include_children = true`) route matching logs from every folder
+  and project into Cloud Logging buckets in the logging project. Projects cannot opt out, and the
   copy survives a project being deleted.
-* Each bucket has its own **retention**. The default audit bucket keeps 400 days; a separate bucket for
+* Each bucket has its own retention. The default audit bucket keeps 400 days; a separate bucket for
   noisy network logs can keep 30.
 * Each sink's writer identity gets `roles/logging.bucketWriter` with an IAM condition limiting it to its
   own bucket.
-* An optional **Cloud Storage archive** sink writes to a bucket with a retention policy (optionally locked,
+* An optional Cloud Storage archive sink writes to a bucket with a retention policy (optionally locked,
   which is irreversible) and a lifecycle rule that deletes objects after the retention period.
-* **Data Access audit logs** can be switched on per service at organisation level. They are off by default
+* Data Access audit logs can be switched on per service at organisation level. They are off by default
   because they are high-volume and billed as ingestion.
 
 Admin Activity and System Event audit logs are always written by Google into each project's `_Required`

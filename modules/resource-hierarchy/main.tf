@@ -22,7 +22,7 @@ resource "google_folder" "sub" {
   for_each = local.subfolders
 
   display_name        = each.value.name
-  parent              = google_folder.top[each.value.parent_key].name
+  parent              = try(google_folder.top[each.value.parent_key].name, "undefined")
   deletion_protection = var.deletion_protection
 
   lifecycle {

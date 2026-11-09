@@ -34,6 +34,12 @@ variables {
       wif_subjects  = ["repo:example-org/gcp-landing-zone:environment:projects"]
       billing_roles = ["roles/billing.user"]
     }
+    projects-plan = {
+      display_name      = "Terraform: project factory (plan)"
+      repository        = "example-org/gcp-landing-zone"
+      org_roles         = ["roles/viewer"]
+      state_bucket_role = "roles/storage.objectViewer"
+    }
   }
 }
 
@@ -85,7 +91,7 @@ run "wif_is_scoped_to_repositories" {
   }
 
   assert {
-    condition     = length(google_service_account_iam_member.wif) == 2
+    condition     = length(google_service_account_iam_member.wif) == 3 && !contains(keys(google_service_account_iam_member.wif), "projects|repository")
     error_message = "A subject-bound account must not also get a repository-wide binding."
   }
 }
@@ -94,8 +100,13 @@ run "least_privilege_grants" {
   command = plan
 
   assert {
-    condition     = length(google_organization_iam_member.ci) == 2 && length(google_billing_account_iam_member.ci) == 1
-    error_message = "Each stage should get only its own org and billing roles."
+    condition     = length(google_organization_iam_member.ci) == 3 && length(google_billing_account_iam_member.ci) == 1
+    error_message = "Each identity should get only its own org and billing roles."
+  }
+
+  assert {
+    condition     = google_storage_bucket_iam_member.ci_state["projects-plan"].role == "roles/storage.objectViewer" && google_storage_bucket_iam_member.ci_state["org"].role == "roles/storage.objectAdmin"
+    error_message = "Plan identities must only read state; apply identities write it."
   }
 
   assert {

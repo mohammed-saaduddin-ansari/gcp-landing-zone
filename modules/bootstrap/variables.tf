@@ -121,19 +121,27 @@ variable "workload_identity_pool_id" {
 
 variable "service_accounts" {
   description = <<-EOT
-    CI service accounts, one per stage so that each pipeline holds only the roles its stage needs.
-    `wif_subjects` binds the account to exact OIDC subjects (for example
-    `repo:owner/name:environment:production`); when empty, the account is bound to every workflow in
-    `repository`. `state_prefix` is informational and is surfaced in the outputs for backend configuration.
+    CI service accounts, typically a read-only `plan` and a read-write `apply` identity per stage, so each
+    pipeline holds only the roles it needs. `wif_subjects` binds the account to exact OIDC subjects (for
+    example `repo:owner/name:environment:org`); when empty, the account is bound to every workflow in
+    `repository`. `state_bucket_role` is `roles/storage.objectAdmin` for identities that write state and
+    `roles/storage.objectViewer` for plan-only identities (which then run `terraform plan -lock=false`).
+    `state_prefix` is informational and is surfaced in the outputs for backend configuration.
   EOT
   type = map(object({
-    display_name  = string
-    repository    = string
-    wif_subjects  = optional(list(string), [])
-    org_roles     = optional(list(string), [])
-    billing_roles = optional(list(string), [])
-    state_prefix  = optional(string)
+    display_name      = string
+    repository        = string
+    wif_subjects      = optional(list(string), [])
+    org_roles         = optional(list(string), [])
+    billing_roles     = optional(list(string), [])
+    state_bucket_role = optional(string, "roles/storage.objectAdmin")
+    state_prefix      = optional(string)
   }))
+
+  validation {
+    condition     = alltrue([for sa in values(var.service_accounts) : contains(["roles/storage.objectAdmin", "roles/storage.objectViewer"], sa.state_bucket_role)])
+    error_message = "state_bucket_role must be roles/storage.objectAdmin or roles/storage.objectViewer."
+  }
 
   validation {
     condition     = alltrue([for k, _ in var.service_accounts : can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", "tf-${k}"))])

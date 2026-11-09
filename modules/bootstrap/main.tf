@@ -117,12 +117,13 @@ resource "google_billing_account_iam_member" "ci" {
   member             = google_service_account.ci[each.value.sa].member
 }
 
-# Every stage reads and writes its own state; see docs/DECISIONS.md for per-prefix hardening.
+# Apply identities read and write state; plan identities only read it. Access is bucket-wide; see
+# docs/DECISIONS.md (ADR-003) for per-stage buckets or prefix conditions as hardening.
 resource "google_storage_bucket_iam_member" "ci_state" {
   for_each = var.service_accounts
 
   bucket = google_storage_bucket.state.name
-  role   = "roles/storage.objectAdmin"
+  role   = each.value.state_bucket_role
   member = google_service_account.ci[each.key].member
 }
 

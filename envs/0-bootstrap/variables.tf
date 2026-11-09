@@ -36,7 +36,7 @@ variable "apply_environments" {
     passed that environment's protection rules can impersonate it. Requires matching GitHub environments.
   EOT
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "labels" {

@@ -51,7 +51,7 @@ No resources.
 | org\_id | Numeric organisation ID. | `string` | n/a | yes |
 | seed\_project\_id | Globally unique ID for the seed project. | `string` | n/a | yes |
 | state\_bucket\_name | Globally unique name for the Terraform state bucket. | `string` | n/a | yes |
-| apply\_environments | When true, each stage's CI identity is bound to the GitHub environment of the same name (subject `repo:<owner/name>:environment:<stage>`) instead of to the whole repository, so only jobs that passed that environment's protection rules can impersonate it. Requires matching GitHub environments. | `bool` | `false` | no |
+| apply\_environments | When true, each stage's CI identity is bound to the GitHub environment of the same name (subject `repo:<owner/name>:environment:<stage>`) instead of to the whole repository, so only jobs that passed that environment's protection rules can impersonate it. Requires matching GitHub environments. | `bool` | `true` | no |
 | labels | Labels for bootstrap resources. | `map(string)` | `{}` | no |
 | state\_bucket\_location | Location of the state bucket. | `string` | `"EU"` | no |
 

@@ -43,6 +43,43 @@ locals {
       billing_roles = ["roles/billing.user", "roles/billing.costsManager"]
     }
   }
+
+  # Read-only roles for the plan identity of every stage. Pull request plans run as these identities with
+  # `terraform plan -lock=false`, so an unreviewed branch can read the estate but never change it.
+  plan_org_roles = [
+    "roles/accesscontextmanager.policyReader",
+    "roles/browser",
+    "roles/essentialcontacts.viewer",
+    "roles/iam.securityReviewer",
+    "roles/logging.viewer",
+    "roles/orgpolicy.policyViewer",
+    "roles/securitycenter.notificationConfigViewer",
+    "roles/viewer",
+  ]
+
+  identities = merge(
+    # Apply identities: bound to the GitHub environment of the stage when apply_environments is true.
+    {
+      for stage, cfg in local.stages : stage => merge(cfg, {
+        repository        = var.github_repository
+        wif_subjects      = var.apply_environments ? ["repo:${var.github_repository}:environment:${stage}"] : []
+        state_bucket_role = "roles/storage.objectAdmin"
+        state_prefix      = stage
+      })
+    },
+    # Plan identities: any workflow in the repository, read-only everywhere.
+    {
+      for stage, cfg in local.stages : "${stage}-plan" => {
+        display_name      = "${cfg.display_name} (plan, read-only)"
+        repository        = var.github_repository
+        wif_subjects      = []
+        org_roles         = local.plan_org_roles
+        billing_roles     = ["roles/billing.viewer"]
+        state_bucket_role = "roles/storage.objectViewer"
+        state_prefix      = stage
+      }
+    },
+  )
 }
 
 module "bootstrap_folder" {
@@ -64,11 +101,5 @@ module "bootstrap" {
   state_bucket_location = var.state_bucket_location
   github_repositories   = [var.github_repository]
 
-  service_accounts = {
-    for stage, cfg in local.stages : stage => merge(cfg, {
-      repository   = var.github_repository
-      wif_subjects = var.apply_environments ? ["repo:${var.github_repository}:environment:${stage}"] : []
-      state_prefix = stage
-    })
-  }
+  service_accounts = local.identities
 }

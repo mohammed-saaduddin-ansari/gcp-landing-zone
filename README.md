@@ -251,6 +251,24 @@ things in this design that cost money, and the levers for each:
 | Security | checkov, with a [documented skip list](.checkov.yaml) | Common misconfigurations |
 | Docs | terraform-docs `--output-check` | READMEs match the code |
 
+Example output from `make test` (one suite shown), run locally with Terraform 1.16.6 and google provider
+8.10.0. The full run is 57 test runs across 15 suites, all passing:
+
+```text
+==> test modules/project-factory
+tests/project_factory.tftest.hcl... in progress
+  run "projects_are_created_with_labels"... pass
+  run "shared_vpc_and_gke_grants"... pass
+  run "budget_has_actual_and_forecast_alerts"... pass
+  run "rejects_missing_required_labels"... pass
+  run "rejects_user_principals"... pass
+  run "rejects_uppercase_labels"... pass
+  run "rejects_invalid_display_name"... pass
+tests/project_factory.tftest.hcl... tearing down
+tests/project_factory.tftest.hcl... pass
+Success! 7 passed, 0 failed.
+```
+
 What the mocked tests do not prove: that the APIs accept these requests, that IAM is sufficient, or that
 eventual consistency and ordering hold up on a real apply. That needs a disposable test organisation and an
 integration run, which is on the roadmap. The tests have already caught real defects during development: a

@@ -1,0 +1,15 @@
+# Sandbox projects get no Shared VPC and a small budget; external IPs are allowed in the sandbox folder.
+project_id: prj-s-data-sandbox-1a2b
+folder: sandbox
+labels:
+  environment: sandbox
+  owner: data-platform
+  cost_centre: cc-5678
+services:
+  - bigquery.googleapis.com
+iam:
+  roles/bigquery.user:
+    - group:data-engineers@example.com
+budget:
+  amount: 100
+  currency_code: GBP

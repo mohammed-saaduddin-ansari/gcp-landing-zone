@@ -1,0 +1,42 @@
+# Copy to terraform.tfvars and replace every placeholder.
+org_id          = "123456789012"
+billing_account = "012345-6789AB-CDEF01"
+quota_project   = "prj-b-seed-1a2b"
+
+# Only for local runs; CI authenticates as this account through workload identity federation.
+# impersonate_service_account = "tf-org@prj-b-seed-1a2b.iam.gserviceaccount.com"
+
+# Find yours with: gcloud organizations list (DIRECTORY_CUSTOMER_ID column)
+directory_customer_ids     = ["C0abc1234"]
+allowed_resource_locations = ["in:eu-locations"]
+default_region             = "europe-west2"
+
+project_ids = {
+  logging  = "prj-c-logging-1a2b"
+  security = "prj-c-security-1a2b"
+}
+
+groups = {
+  org_admins      = "gcp-organization-admins@example.com"
+  billing_admins  = "gcp-billing-admins@example.com"
+  network_admins  = "gcp-network-admins@example.com"
+  security_admins = "gcp-security-admins@example.com"
+  auditors        = "gcp-auditors@example.com"
+  developers      = "gcp-developers@example.com"
+}
+
+audit_log_retention_days = 400
+
+# Optional seven-year archive in Cloud Storage. Locking the retention policy is irreversible.
+# log_archive = {
+#   bucket_name    = "example-org-audit-archive-1a2b"
+#   location       = "EU"
+#   retention_days = 2557
+#   lock_retention = false
+# }
+
+essential_contacts = {
+  "gcp-security@example.com" = ["SECURITY", "TECHNICAL_INCIDENTS", "SUSPENSION"]
+  "gcp-billing@example.com"  = ["BILLING"]
+  "gcp-platform@example.com" = ["TECHNICAL", "PRODUCT_UPDATES", "LEGAL"]
+}

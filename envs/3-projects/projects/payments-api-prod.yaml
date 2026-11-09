@@ -1,0 +1,27 @@
+project_id: prj-p-payments-api-1a2b
+name: Payments API - prod
+folder: prod
+labels:
+  environment: prod
+  owner: payments
+  cost_centre: cc-1234
+  data_classification: confidential
+services:
+  - container.googleapis.com
+  - sqladmin.googleapis.com
+  - secretmanager.googleapis.com
+iam:
+  roles/container.developer:
+    - group:payments-devs@example.com
+  roles/monitoring.viewer:
+    - group:payments-devs@example.com
+    - group:sre@example.com
+budget:
+  amount: 2500
+  currency_code: GBP
+shared_vpc:
+  subnets:
+    - europe-west2/sb-prod-ew2-app
+  network_users:
+    - group:payments-devs@example.com
+vpc_sc: true

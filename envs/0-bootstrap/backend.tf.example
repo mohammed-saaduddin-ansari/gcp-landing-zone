@@ -1,0 +1,9 @@
+# Stage 0 starts with local state because the bucket does not exist yet. After the first apply:
+#   1. cp backend.tf.example backend.tf
+#   2. terraform init -migrate-state -backend-config="bucket=<state_bucket output>"
+#   3. delete the local terraform.tfstate once the migration is confirmed
+terraform {
+  backend "gcs" {
+    prefix = "bootstrap"
+  }
+}

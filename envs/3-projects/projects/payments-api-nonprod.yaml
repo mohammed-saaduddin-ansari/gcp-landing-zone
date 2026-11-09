@@ -1,0 +1,22 @@
+project_id: prj-n-payments-api-1a2b
+name: Payments API - nonprod
+folder: nonprod
+labels:
+  environment: nonprod
+  owner: payments
+  cost_centre: cc-1234
+services:
+  - container.googleapis.com
+  - sqladmin.googleapis.com
+iam:
+  roles/container.developer:
+    - group:payments-devs@example.com
+budget:
+  amount: 500
+  currency_code: GBP
+  alert_thresholds: [0.5, 0.8, 1.0]
+shared_vpc:
+  subnets:
+    - europe-west2/sb-nonprod-ew2-app
+  network_users:
+    - group:payments-devs@example.com

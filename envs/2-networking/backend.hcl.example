@@ -1,0 +1,2 @@
+bucket = "example-org-tfstate-1a2b"
+prefix = "networking"

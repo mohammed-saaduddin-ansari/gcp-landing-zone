@@ -1,0 +1,27 @@
+billing_account = "012345-6789AB-CDEF01"
+quota_project   = "prj-b-seed-1a2b"
+budget_currency = "GBP"
+# impersonate_service_account = "tf-projects@prj-b-seed-1a2b.iam.gserviceaccount.com"
+
+# From 1-org: terraform -chdir=../1-org output -json folder_ids
+folder_ids = {
+  prod    = "folders/100000000002"
+  nonprod = "folders/100000000003"
+  sandbox = "folders/100000000004"
+}
+
+# From 2-networking: terraform -chdir=../2-networking output -json host_projects
+host_projects = {
+  prod    = "prj-p-net-host-1a2b"
+  nonprod = "prj-n-net-host-1a2b"
+}
+
+# Off until an access policy exists. Turn on in dry_run, review violations, then switch to enforced.
+vpc_sc = {
+  enabled          = false
+  access_policy_id = "123456789"
+  perimeter_name   = "prod_data"
+  mode             = "dry_run"
+  # The prod host project should share the perimeter with its service projects.
+  extra_resources = ["projects/100000000010"]
+}

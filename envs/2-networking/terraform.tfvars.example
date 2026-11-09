@@ -1,0 +1,50 @@
+billing_account = "012345-6789AB-CDEF01"
+quota_project   = "prj-b-seed-1a2b"
+# impersonate_service_account = "tf-networking@prj-b-seed-1a2b.iam.gserviceaccount.com"
+
+# From the 1-org stage: terraform -chdir=../1-org output -json folder_ids
+folder_ids = {
+  prod    = "folders/100000000002"
+  nonprod = "folders/100000000003"
+}
+
+network_admins_group = "gcp-network-admins@example.com"
+
+# Address plan: 10.10.0.0/16 prod, 10.20.0.0/16 nonprod. Non-overlapping so the environments could be
+# connected later (for example through Network Connectivity Center) without renumbering.
+# GKE Pod and Service ranges use 100.64.0.0/10 (RFC 6598) to conserve RFC 1918 space.
+environments = {
+  prod = {
+    host_project_id = "prj-p-net-host-1a2b"
+    network_name    = "vpc-prod"
+    psc_endpoint_ip = "10.255.255.10"
+    subnets = {
+      sb-prod-ew2-app = {
+        region           = "europe-west2"
+        ip_cidr_range    = "10.10.0.0/20"
+        secondary_ranges = { pods = "100.64.0.0/14", services = "100.72.0.0/20" }
+      }
+      sb-prod-ew2-data = {
+        region        = "europe-west2"
+        ip_cidr_range = "10.10.16.0/22"
+      }
+      sb-prod-ew1-app = {
+        region        = "europe-west1"
+        ip_cidr_range = "10.10.32.0/20"
+      }
+    }
+  }
+  nonprod = {
+    host_project_id = "prj-n-net-host-1a2b"
+    network_name    = "vpc-nonprod"
+    psc_endpoint_ip = "10.255.255.20"
+    subnets = {
+      sb-nonprod-ew2-app = {
+        region           = "europe-west2"
+        ip_cidr_range    = "10.20.0.0/20"
+        secondary_ranges = { pods = "100.80.0.0/14", services = "100.88.0.0/20" }
+        flow_sampling    = 0.1
+      }
+    }
+  }
+}

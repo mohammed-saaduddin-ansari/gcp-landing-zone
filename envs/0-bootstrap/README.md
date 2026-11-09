@@ -11,13 +11,20 @@ cp backend.tf.example backend.tf
 terraform init -migrate-state -backend-config="bucket=$(terraform output -raw state_bucket)"
 ```
 
-Then record the outputs as GitHub Actions **variables** (not secrets; none of them is sensitive):
-`GCP_WIF_PROVIDER` from `workload_identity_provider`, and one service account per stage from
-`ci_service_accounts`. After this, the human's broad access can be reduced: later stages run as their CI
-identities.
+Each later stage gets two CI identities:
 
-With `apply_environments = true`, create GitHub environments named `org`, `networking` and `projects` with
-required reviewers. Only jobs in those environments can impersonate the stage identities.
+| Identity | Roles | Who can impersonate it |
+| --- | --- | --- |
+| `tf-<stage>-plan` | read-only at organisation level, `objectViewer` on state | any workflow in the repository (pull request plans, run with `-lock=false`) |
+| `tf-<stage>` | what the stage needs to change things, `objectAdmin` on state | only jobs running in the GitHub environment `<stage>` (`apply_environments = true`, the default) |
+
+Then record the outputs as GitHub Actions **variables** (not secrets; none of them is sensitive):
+`GCP_WIF_PROVIDER` from `workload_identity_provider`, `TF_STATE_BUCKET` from `state_bucket`, and
+`GCP_SA_<STAGE>_PLAN` from `ci_service_accounts`. Create GitHub environments named `org`, `networking` and
+`projects` with required reviewers and a `main`-only deployment rule.
+
+After this, the person who ran the bootstrap no longer needs standing organisation-wide access: later stages
+run as their CI identities.
 
 <!-- BEGIN_TF_DOCS -->
 ### Requirements

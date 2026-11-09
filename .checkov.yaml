@@ -1,0 +1,35 @@
+# Checkov configuration. Run from the repository root: checkov --config-file .checkov.yaml
+#
+# Every skip below is a deliberate decision with a reason; docs/ARCHITECTURE.md (Static analysis) repeats
+# them. Revisit this list whenever checkov is upgraded.
+directory:
+  - .
+framework:
+  - terraform
+skip-path:
+  - \.terraform
+compact: true
+quiet: true
+skip-check:
+  # Bucket access logging (legacy usage logs). Access to the state and archive buckets is audited through
+  # Cloud Audit Logs instead: Admin Activity always, Data Access via modules/logging
+  # (data_access_audit_services), and all of it lands in the central audit bucket.
+  - CKV_GCP_62
+  # Versioning on the log archive bucket. Object Versioning cannot be combined with a bucket retention
+  # policy, and the retention policy (optionally locked) is the stronger control for an archive.
+  # The state bucket, which needs rollback, is versioned.
+  - CKV_GCP_78
+  # Private Google Access per subnet. The flag is driven by a variable that defaults to true, which
+  # checkov cannot resolve through for_each; tests/shared_vpc.tftest.hcl asserts it is on.
+  - CKV_GCP_74
+  # GitHub OIDC trust policy. Checkov only recognises an `assertion.sub == ...` condition. Here the
+  # provider condition allow-lists repositories (`assertion.repository in [...]`) and each service account
+  # is then bound either to that repository or to exact subjects such as
+  # `repo:<owner>/<repo>:environment:<stage>` (see modules/bootstrap, ADR-003).
+  - CKV_GCP_125
+  # Per-project audit log configuration. Audit logging is configured once at organisation level
+  # (google_organization_iam_audit_config in modules/logging), which every project inherits.
+  - CKV2_GCP_5
+  # "Network defines a firewall". Traffic policy lives in hierarchical firewall policies at organisation
+  # and folder level (modules/firewall-policy), which checkov's graph check does not follow.
+  - CKV2_GCP_18

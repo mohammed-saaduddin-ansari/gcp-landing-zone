@@ -75,3 +75,13 @@ run "vpc_sc_dry_run" {
     error_message = "Unexpected perimeter name."
   }
 }
+
+run "missing_host_project_is_reported" {
+  command = plan
+
+  variables {
+    host_projects = { prod = "prj-p-net-host-1a2b" }
+  }
+
+  expect_failures = [output.projects]
+}

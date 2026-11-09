@@ -11,8 +11,10 @@ locals {
   # "region/subnet" references become subnet IDs in the environment's host project.
   projects = {
     for key, p in local.raw : p.project_id => {
-      name      = try(p.name, null)
-      folder_id = var.folder_ids[p.folder]
+      name = try(p.name, null)
+      # Unknown keys fall back to placeholders; the preconditions on output "projects" then fail the plan
+      # with a message that names the problem instead of an index error.
+      folder_id = lookup(var.folder_ids, p.folder, "folders/0")
       labels    = try(p.labels, {})
       services  = try(p.services, [])
       iam       = try(p.iam, {})
@@ -24,10 +26,10 @@ locals {
         pubsub_topic       = try(p.budget.pubsub_topic, null)
       }
       shared_vpc = try(p.shared_vpc, null) == null ? null : {
-        host_project = var.host_projects[p.folder]
+        host_project = lookup(var.host_projects, p.folder, "missing-host-project")
         subnets = [
           for s in try(p.shared_vpc.subnets, []) :
-          "projects/${var.host_projects[p.folder]}/regions/${split("/", s)[0]}/subnetworks/${split("/", s)[1]}"
+          "projects/${lookup(var.host_projects, p.folder, "missing-host-project")}/regions/${split("/", s)[0]}/subnetworks/${split("/", s)[1]}"
         ]
         network_users = try(p.shared_vpc.network_users, [])
       }
@@ -35,19 +37,6 @@ locals {
   }
 
   vpc_sc_projects = [for key, p in local.raw : p.project_id if try(p.vpc_sc, false)]
-}
-
-# File names and project IDs are independent, so make duplicates and dangling references obvious.
-check "project_definitions" {
-  assert {
-    condition     = length(local.raw) == length(distinct([for p in values(local.raw) : p.project_id]))
-    error_message = "Two YAML files declare the same project_id."
-  }
-
-  assert {
-    condition     = alltrue([for p in values(local.raw) : contains(keys(var.folder_ids), p.folder)])
-    error_message = "A project references a folder key that is not in folder_ids."
-  }
 }
 
 module "projects" {
